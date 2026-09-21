@@ -49,6 +49,7 @@
     const slider = $("#turn-slider");
     slider.max = Math.max(0, last);
     $("#title").textContent = `galsim · ${state.run.label}`;
+    renderGoalBanner();
     buildLegend();
     drawBackground();
     fitView();
@@ -80,6 +81,19 @@
     renderStatus();
     drawTurn();
     renderPanel();
+  }
+
+  function renderGoalBanner() {
+    const b = $("#goal-banner"); b.replaceChildren();
+    const goals = Object.entries(state.run.goals || {});
+    if (!goals.length) { b.hidden = true; return; }
+    b.hidden = false;
+    const shared = goals.length === 1 && state.run.goal_assignment !== "per_agent";
+    for (const [gid, g] of goals) {
+      const who = shared ? "every agent's goal" : `goal of ${g.agents.map(agentName).join(", ")}`;
+      b.appendChild(el("div", { class: "goalline" }, [el("span", { class: "goalkey", text: who }), el("span", { class: "goaltext", text: g.statement.trim() }), el("span", { class: "muted small", text: `(${gid}${g.difficulty ? ", " + g.difficulty : ""})` })]));
+      b.appendChild(el("details", {}, [el("summary", { class: "small", text: "How the Game Master judges completion" }), el("div", { class: "rubric", text: g.rubric })]));
+    }
   }
 
   function renderStatus() {
