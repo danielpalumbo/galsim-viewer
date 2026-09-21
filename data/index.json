@@ -1,6 +1,20 @@
 {
- "generated_at": "2026-09-18T01:03:32+00:00",
+ "generated_at": "2026-09-21T22:06:11+00:00",
  "runs": [
+  {
+   "run_id": "run01",
+   "label": "Run 1: 10 agents, shared goal brain_sim_molecular (Sonnet 5 agents, Fable 5.1 GM)",
+   "backend": "claude_code",
+   "n_agents": 10,
+   "turns_done": 1,
+   "n_turns": 120,
+   "last_year": 100.0,
+   "generated_at": "2026-09-21T22:06:11+00:00",
+   "finished": false,
+   "next_due_at": "2026-09-22T22:06:11+00:00",
+   "paused": null,
+   "halted": null
+  },
   {
    "run_id": "smoke_cc01",
    "label": "Smoke test: 3 agents on real models (Sonnet 5 agents, Fable 5.1 GM), 3 turns",
