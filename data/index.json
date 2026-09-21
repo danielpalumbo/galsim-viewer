@@ -1,0 +1,33 @@
+{
+ "generated_at": "2026-09-18T01:03:32+00:00",
+ "runs": [
+  {
+   "run_id": "mock_run01",
+   "label": "Mock run: 10 scripted agents, rule-based GM, 20 turns (no models)",
+   "backend": "mock",
+   "n_agents": 10,
+   "turns_done": 20,
+   "n_turns": 20,
+   "last_year": 11000.0,
+   "generated_at": "",
+   "finished": true,
+   "next_due_at": null,
+   "paused": null,
+   "halted": null
+  },
+  {
+   "run_id": "smoke_cc01",
+   "label": "Smoke test: 3 agents on real models (Sonnet 5 agents, Fable 5.1 GM), 3 turns",
+   "backend": "claude_code",
+   "n_agents": 3,
+   "turns_done": 3,
+   "n_turns": 3,
+   "last_year": 300.0,
+   "generated_at": "2026-09-18T01:03:32+00:00",
+   "finished": true,
+   "next_due_at": null,
+   "paused": null,
+   "halted": null
+  }
+ ]
+}

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>galsim viewer</title>
+<meta name="description" content="Turn-by-turn view of a galactic sandbox run: agents, their thoughts and worries, the Game Master's rulings.">
+<link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo" aria-hidden="true">✶</span><span id="title">galsim</span></div>
+  <div class="status" id="status">loading…</div>
+  <div class="runsel"><label for="run-select" class="muted">run</label><select id="run-select"></select></div>
+</header>
+
+<main class="layout">
+  <section class="mapcol">
+    <div class="controls">
+      <button id="prev" class="btn" title="previous turn (←)">◀</button>
+      <input id="turn-slider" type="range" min="0" max="0" value="0" aria-label="turn">
+      <button id="next" class="btn" title="next turn (→)">▶</button>
+      <div class="turnlabel"><strong id="turn-num">turn 0</strong><span class="muted" id="turn-years"></span></div>
+      <div class="spacer"></div>
+      <div class="zoomctl">
+        <button id="zoom-in" class="btn" title="zoom in">+</button>
+        <button id="zoom-out" class="btn" title="zoom out">−</button>
+        <button id="zoom-fit" class="btn" title="whole galaxy">galaxy</button>
+        <button id="zoom-focus" class="btn" title="zoom to the selected agent's neighbourhood">focus</button>
+      </div>
+    </div>
+    <div class="mapwrap">
+      <svg id="map" viewBox="-23 -23 46 46" role="img" aria-label="top-down map of the galaxy with agent holdings">
+        <g id="layer-bg"></g>
+        <g id="layer-horizon"></g>
+        <g id="layer-transit"></g>
+        <g id="layer-events"></g>
+        <g id="layer-domains"></g>
+        <g id="layer-labels"></g>
+      </svg>
+      <div id="tooltip" class="tooltip" role="status" aria-live="polite" hidden></div>
+      <div class="scalebar" id="scalebar"></div>
+    </div>
+    <div class="legend" id="legend" aria-label="agents"></div>
+    <p class="hint muted">Click an agent's marker (or its legend entry) for its thoughts, worries and ruling. Scroll to zoom, drag to pan, ← → to step turns. The dashed circle is the selected agent's knowledge horizon: light from anything farther has not reached its seat yet.</p>
+  </section>
+
+  <aside class="panel">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="agent" role="tab">Agent</button>
+      <button class="tab" data-tab="gm" role="tab">Game Master</button>
+      <button class="tab" data-tab="events" role="tab">Events</button>
+      <button class="tab" data-tab="run" role="tab">Run</button>
+    </div>
+    <div id="tab-agent" class="tabpane active" role="tabpanel"></div>
+    <div id="tab-gm" class="tabpane" role="tabpanel"></div>
+    <div id="tab-events" class="tabpane" role="tabpanel"></div>
+    <div id="tab-run" class="tabpane" role="tabpanel"></div>
+  </aside>
+</main>
+<script src="viewer.js"></script>
+</body>
+</html>
