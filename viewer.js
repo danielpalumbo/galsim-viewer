@@ -89,7 +89,7 @@
     else if (s.paused) parts.push(`paused: ${s.paused}`);
     else if (s.finished) parts.push("finished");
     else if (s.next_due_at) parts.push(`next turn ${untilText(s.next_due_at)} (${new Date(s.next_due_at).toLocaleString()})`);
-    parts.push(`updated ${ago(state.run.generated_at)}`);
+    if (state.run.generated_at) parts.push(`last turn completed ${ago(state.run.generated_at)}`);
     $("#status").textContent = parts.join(" · ");
   }
 
