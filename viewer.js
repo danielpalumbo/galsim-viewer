@@ -130,13 +130,13 @@
     for (const r of G.rings_kpc) g.appendChild(svgEl("circle", { class: "ring", cx: 0, cy: 0, r }));
     for (const [name, pts] of Object.entries(G.arms)) {
       g.appendChild(svgEl("polyline", { class: "arm", points: pts.map(([x, y]) => `${x},${-y}`).join(" ") }));
-      if (pts.length > 40 && state.view.half > 6) { const [x, y] = pts[Math.floor(pts.length * 0.75)]; const t = svgEl("text", { class: "armlabel", x, y: -y, "font-size": 11 * u }); t.textContent = name.replace(/_/g, " "); g.appendChild(t); }
+      if (pts.length > 40 && state.view.half > 6) { const [x, y] = pts[Math.floor(pts.length * 0.75)]; const t = svgEl("text", { class: "armlabel", x, y: -y, "font-size": 11 * u, "stroke-width": 3 * u }); t.textContent = name.replace(/_/g, " "); g.appendChild(t); }
     }
     const [sx, sy] = G.sun_kpc;
     g.appendChild(svgEl("circle", { class: "sun", cx: sx, cy: -sy, r: 2.5 * u }));
     if (state.view.half < 12) for (const c of G.cells) {
       g.appendChild(svgEl("circle", { class: "celldot", cx: c.x, cy: -c.y, r: 2 * u }));
-      const t = svgEl("text", { class: "celllabel", x: c.x + 4 * u, y: -c.y - 4 * u, "font-size": 10 * u }); t.textContent = c.id; g.appendChild(t);
+      const t = svgEl("text", { class: "celllabel", x: c.x - 6 * u, y: -c.y + 16 * u, "text-anchor": "end", "font-size": 10 * u, "stroke-width": 3 * u }); t.textContent = c.id; g.appendChild(t);
     }
   }
   function drawScalebar() {
@@ -183,7 +183,7 @@
       D.appendChild(m);
       if (d.seat) D.appendChild(svgEl("circle", { class: "seatring", cx: x, cy: y, r: (rpx + 3) * u }));
       if (d.seat && d.owner === state.selected) D.appendChild(svgEl("circle", { class: "selring", cx: x, cy: y, r: (rpx + 7) * u }));
-      if (d.seat) { const t = svgEl("text", { class: "label", x: x + (rpx + 5) * u, y: y + 4 * u, "font-size": 12 * u }); t.textContent = d.owner; L.appendChild(t); }
+      if (d.seat) { const t = svgEl("text", { class: "label", x: x + (rpx + 5) * u, y: y + 4 * u, "font-size": 12 * u, "stroke-width": 3 * u }); t.textContent = d.owner; L.appendChild(t); }
     }
     drawScalebar();
   }

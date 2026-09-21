@@ -42,7 +42,7 @@ select, .btn { font: inherit; color: var(--text-primary); background: var(--surf
 #map.dragging { cursor: grabbing; }
 .ring { fill: none; stroke: var(--grid); stroke-width: 0.06; vector-effect: non-scaling-stroke; }
 .arm { fill: none; stroke: var(--axis); stroke-width: 1px; vector-effect: non-scaling-stroke; opacity: 0.9; }
-.armlabel, .celllabel { fill: var(--muted); font-size: 11px; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+.armlabel, .celllabel { fill: var(--muted); paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; }   /* font-size and stroke-width are attributes in map units */
 .celldot { fill: var(--axis); }
 .sun { fill: var(--text-secondary); }
 .domain { stroke: var(--surface-1); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: pointer; }
@@ -55,7 +55,7 @@ select, .btn { font: inherit; color: var(--text-primary); background: var(--surf
 .probe { stroke: var(--surface-1); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .event { fill: none; stroke: var(--text-secondary); stroke-width: 1.2px; vector-effect: non-scaling-stroke; pointer-events: none; }
 .event.natural { stroke: var(--serious); }
-.label { fill: var(--text-primary); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.label { fill: var(--text-primary); font-weight: 600; paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; pointer-events: none; }
 .tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-width: 260px; }
 .tooltip strong { font-size: 13px; }
 .tooltip .row { display: flex; justify-content: space-between; gap: 12px; }
