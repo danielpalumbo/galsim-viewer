@@ -31,7 +31,7 @@
   async function init() {
     state.site = await getJSON(bust("data/index.json"));
     const sel = $("#run-select");
-    sel.replaceChildren(...state.site.runs.map((r) => el("option", { value: r.run_id, text: `${r.label} · ${r.turns_done} turn${r.turns_done === 1 ? "" : "s"}` })));
+    sel.replaceChildren(...state.site.runs.map((r) => el("option", { value: r.run_id, text: `${r.label} · ${r.turns_done} turn${r.turns_done === 1 ? "" : "s"}${r.backend === "mock" ? " · scripted, no models" : ""}` })));
     const params = new URLSearchParams(location.hash.slice(1));
     const wanted = params.get("run");
     state.runId = state.site.runs.some((r) => r.run_id === wanted) ? wanted : (state.site.runs[0] || {}).run_id;
@@ -221,6 +221,7 @@
     if (!state.selected || !td.agents[state.selected]) {
       pane.appendChild(el("h2", { text: "Agents this turn" }));
       pane.appendChild(el("p", { class: "muted small", text: "Click a marker on the map or a name below." }));
+      if (state.run.backend === "mock") pane.appendChild(el("p", { class: "small bad", text: "Mock run: scripted agents, no models. Their thoughts are templates; pick a real-model run for natural-language reasoning." }));
       const tb = el("table", { class: "t" }, [el("tr", {}, ["", "agent", "domains", "power W", "compute ops/s", "goal"].map((h) => el("th", { text: h })))]);
       for (const a of state.run.agents) {
         const s = td.agents[a.id]; if (!s) continue;
@@ -232,6 +233,7 @@
     const aid = state.selected, a = td.agents[aid], sub = a.submission, ru = a.ruling, obs = a.observations;
     const sw = el("span", { class: "pill" }); sw.style.background = colorOf(aid).css;
     pane.appendChild(el("h2", {}, [sw, `${a.name} (${aid})`, el("span", { class: "muted small", text: ` seat ${a.seat_domain} in ${a.seat_cell || "?"}` })]));
+    if (state.run.backend === "mock") pane.appendChild(el("p", { class: "small bad", text: "Mock run: this agent is a scripted policy with no model behind it, so its thoughts, worries and memory are one-line templates. Choose a real-model run in the run selector for natural-language reasoning." }));
     pane.appendChild(el("div", { class: "stats" }, [stat("power", `${sci(a.power_W)} W`), stat("compute", `${sci(a.compute)} ops/s`), stat("domains", String(a.n_domains)), stat("goal", a.goal_fraction.toFixed(3)), stat("seeds in flight", String(obs ? obs.in_transit : "–")), stat("knowledge horizon", `${yr(a.horizon_ly)} ly`)]));
     if (sub && sub.idle) pane.appendChild(el("p", { class: "bad", text: `Idle turn: ${sub.notes.join("; ")}` }));
     pane.appendChild(el("h3", { text: "Thinking about" })); pane.appendChild(quote(sub ? sub.thinking : ""));
