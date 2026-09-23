@@ -122,22 +122,29 @@
   }
 
   // ------------------------------------------------------------------ map
+  // Scene elements are created once per turn. Each carries an optional bounding box in map units (for culling to the
+  // viewport) and an optional size function (pixel-constant radii, strokes, fonts recomputed on zoom). Panning only
+  // re-culls; zooming re-culls and re-sizes; nothing is rebuilt and no stroke is non-scaling.
   const svg = () => $("#map");
   const unit = () => (2 * state.view.half) / svg().getBoundingClientRect().width;   // kpc per px
+  const entry = (list, el, bbox, size) => { list.push({ el, bbox, size, vis: true, sizedAt: null, hidden: false }); return el; };
   function applyView() {
     const v = state.view;
     svg().setAttribute("viewBox", `${v.cx - v.half} ${-v.cy - v.half} ${2 * v.half} ${2 * v.half}`);
-    if (v.half !== lastHalf && !rafPending) {                 // a pan changes nothing pixel-sized; a zoom does, once per frame
-      rafPending = true;
-      requestAnimationFrame(() => { rafPending = false; rescale(); });
-    }
+    if (!rafPending) { rafPending = true; requestAnimationFrame(() => { rafPending = false; rescale(); }); }
   }
   function rescale() {
-    const u = unit();
-    lastHalf = state.view.half;
-    for (const { el, fn } of scaledBg) fn(el, u);
-    for (const { el, fn } of scaledTurn) fn(el, u);
-    drawScalebar();
+    if (!state.run) return;
+    const u = unit(), v = state.view;
+    const x0 = v.cx - v.half, x1 = v.cx + v.half, y0 = -v.cy - v.half, y1 = -v.cy + v.half, pad = 24 * u;
+    for (const list of [scaledBg, scaledTurn]) for (const e of list) {
+      let vis = true;
+      if (e.bbox) vis = !(e.bbox[2] < x0 - pad || e.bbox[0] > x1 + pad || e.bbox[3] < y0 - pad || e.bbox[1] > y1 + pad);
+      if (vis && e.size && e.sizedAt !== v.half) { e.hidden = e.size(e.el, u) === false; e.sizedAt = v.half; }
+      const show = vis && !e.hidden;
+      if (show !== e.vis) { e.vis = show; e.el.style.display = show ? "" : "none"; }
+    }
+    if (lastHalf !== v.half) { lastHalf = v.half; drawScalebar(); }
   }
   function fitView() { state.view = { cx: 0, cy: 0, half: 23 }; applyView(); }
   function focusView() {
@@ -154,34 +161,39 @@
     applyView();
   }
   function zoomBy(f, px, py) {
-    const v = state.view, u = unit(), rect = svg().getBoundingClientRect();
+    const v = state.view, rect = svg().getBoundingClientRect();
     const fx = px == null ? 0.5 : (px - rect.left) / rect.width, fy = py == null ? 0.5 : (py - rect.top) / rect.height;
     const gx = v.cx - v.half + fx * 2 * v.half, gy = v.cy + v.half - fy * 2 * v.half;
     const half = Math.min(60, Math.max(0.002, v.half / f));
     state.view = { cx: gx - (fx - 0.5) * 2 * half, cy: gy + (fy - 0.5) * 2 * half, half };
     applyView();
   }
+  const ptBox = (x, y) => [x, y, x, y];
+  const circleBox = (x, y, r) => [x - r, y - r, x + r, y + r];
+  const strokeW = (px) => (el, u) => { el.setAttribute("stroke-width", px * u); };
   function drawBackground() {
     const g = $("#layer-bg"); g.replaceChildren(); scaledBg.length = 0;
     if (!state.run) return;
-    const u = unit(), G = state.run.galaxy;
-    for (const r of G.rings_kpc) g.appendChild(svgEl("circle", { class: "ring", cx: 0, cy: 0, r }));
+    const G = state.run.galaxy;
+    for (const r of G.rings_kpc) g.appendChild(entry(scaledBg, svgEl("circle", { class: "ring", cx: 0, cy: 0, r }), circleBox(0, 0, r), strokeW(0.7)));
     for (const [name, pts] of Object.entries(G.arms)) {
-      g.appendChild(svgEl("polyline", { class: "arm", points: pts.map(([x, y]) => `${x},${-y}`).join(" ") }));
+      const xs = pts.map((p) => p[0]), ys = pts.map((p) => -p[1]);
+      g.appendChild(entry(scaledBg, svgEl("polyline", { class: "arm", points: pts.map(([x, y]) => `${x},${-y}`).join(" ") }),
+                          [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], strokeW(1)));
       if (pts.length > 40) {
         const [x, y] = pts[Math.floor(pts.length * 0.75)];
         const t = svgEl("text", { class: "armlabel", x, y: -y }); t.textContent = name.replace(/_/g, " ");
-        g.appendChild(reg(scaledBg, t, (el, u) => { el.setAttribute("font-size", 11 * u); el.setAttribute("stroke-width", 3 * u); el.style.display = state.view.half > 6 ? "" : "none"; }));
+        g.appendChild(entry(scaledBg, t, ptBox(x, -y), (el, u) => { el.setAttribute("font-size", 11 * u); el.setAttribute("stroke-width", 3 * u); return state.view.half > 6; }));
       }
     }
     const [sx, sy] = G.sun_kpc;
-    g.appendChild(reg(scaledBg, svgEl("circle", { class: "sun", cx: sx, cy: -sy }), (el, u) => el.setAttribute("r", 2.5 * u)));
+    g.appendChild(entry(scaledBg, svgEl("circle", { class: "sun", cx: sx, cy: -sy }), ptBox(sx, -sy), (el, u) => { el.setAttribute("r", 2.5 * u); }));
     for (const c of G.cells) {
-      g.appendChild(reg(scaledBg, svgEl("circle", { class: "celldot", cx: c.x, cy: -c.y }), (el, u) => { el.setAttribute("r", 2 * u); el.style.display = state.view.half < 12 ? "" : "none"; }));
+      g.appendChild(entry(scaledBg, svgEl("circle", { class: "celldot", cx: c.x, cy: -c.y }), ptBox(c.x, -c.y), (el, u) => { el.setAttribute("r", 2 * u); return state.view.half < 12; }));
       const t = svgEl("text", { class: "celllabel", "text-anchor": "end" }); t.textContent = c.id;
-      g.appendChild(reg(scaledBg, t, (el, u) => { el.setAttribute("x", c.x - 6 * u); el.setAttribute("y", -c.y + 16 * u); el.setAttribute("font-size", 10 * u); el.setAttribute("stroke-width", 3 * u); el.style.display = state.view.half < 12 ? "" : "none"; }));
+      g.appendChild(entry(scaledBg, t, ptBox(c.x, -c.y), (el, u) => { el.setAttribute("x", c.x - 6 * u); el.setAttribute("y", -c.y + 16 * u); el.setAttribute("font-size", 10 * u); el.setAttribute("stroke-width", 3 * u); return state.view.half < 12; }));
     }
-    for (const { el, fn } of scaledBg) fn(el, u);
+    lastHalf = null; rescale();
   }
   function drawScalebar() {
     const u = unit(), target = 0.22 * 2 * state.view.half;
@@ -192,52 +204,51 @@
   }
   function drawTurn() {
     if (!state.td) return;
-    const u = unit(), td = state.td;
+    const td = state.td;
     const H = $("#layer-horizon"), T = $("#layer-transit"), E = $("#layer-events"), D = $("#layer-domains"), L = $("#layer-labels");
     for (const g of [H, T, E, D, L]) g.replaceChildren();
     scaledTurn.length = 0;
     if (state.selected && td.agents[state.selected] && td.agents[state.selected].seat_xyz_kpc) {
-      const a = td.agents[state.selected], c = colorOf(state.selected);
-      H.appendChild(svgEl("circle", { class: "horizon", cx: a.seat_xyz_kpc[0], cy: -a.seat_xyz_kpc[1], r: a.horizon_ly / LY_PER_KPC, fill: c.css, stroke: c.css }));
+      const a = td.agents[state.selected], c = colorOf(state.selected), r = a.horizon_ly / LY_PER_KPC;
+      const [hx, hy] = [a.seat_xyz_kpc[0], -a.seat_xyz_kpc[1]];
+      H.appendChild(entry(scaledTurn, svgEl("circle", { class: "horizon", cx: hx, cy: hy, r, fill: c.css, stroke: c.css }), circleBox(hx, hy, r), strokeW(1)));
     }
     for (const t of td.transit) {
       const c = colorOf(t.owner);
-      T.appendChild(svgEl("line", { class: "track", x1: t.from_kpc[0], y1: -t.from_kpc[1], x2: t.to_kpc[0], y2: -t.to_kpc[1] }));
-      const px = t.from_kpc[0] + (t.to_kpc[0] - t.from_kpc[0]) * t.progress, py = t.from_kpc[1] + (t.to_kpc[1] - t.from_kpc[1]) * t.progress;
-      const dot = svgEl("circle", { class: "probe", cx: px, cy: -py, fill: c.css });
+      const [x1, y1, x2, y2] = [t.from_kpc[0], -t.from_kpc[1], t.to_kpc[0], -t.to_kpc[1]];
+      T.appendChild(entry(scaledTurn, svgEl("line", { class: "track", x1, y1, x2, y2 }), [Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2)], strokeW(1)));
+      const px = x1 + (x2 - x1) * t.progress, py = y1 + (y2 - y1) * t.progress;
+      const dot = svgEl("circle", { class: "probe", cx: px, cy: py, fill: c.css });
       dot.appendChild(svgEl("title")).textContent = `${t.id} · ${agentName(t.owner)} · ${sci(t.mass_kg)} kg at ${t.v}c → ${t.dest_cell}, arrives year ${yr(t.arr)}`;
-      T.appendChild(reg(scaledTurn, dot, (el, u) => el.setAttribute("r", 3 * u)));
+      T.appendChild(entry(scaledTurn, dot, ptBox(px, py), (el, u) => { el.setAttribute("r", 3 * u); el.setAttribute("stroke-width", u); }));
     }
     for (const e of td.events) {
       const cls = `event${e.legibility === "natural" ? " natural" : ""}`;
       const [x, y] = [e.xyz_kpc[0], -e.xyz_kpc[1]];
-      if (e.kind === "persistent") E.appendChild(reg(scaledTurn, svgEl("circle", { class: cls, cx: x, cy: y }), (el, u) => el.setAttribute("r", 6 * u)));
-      else E.appendChild(reg(scaledTurn, svgEl("path", { class: cls }), (el, u) => { const s = 4 * u; el.setAttribute("d", `M${x - s},${y - s}L${x + s},${y + s}M${x - s},${y + s}L${x + s},${y - s}`); }));
+      if (e.kind === "persistent") E.appendChild(entry(scaledTurn, svgEl("circle", { class: cls, cx: x, cy: y }), ptBox(x, y), (el, u) => { el.setAttribute("r", 6 * u); el.setAttribute("stroke-width", 1.2 * u); }));
+      else E.appendChild(entry(scaledTurn, svgEl("path", { class: cls }), ptBox(x, y), (el, u) => { const s = 4 * u; el.setAttribute("d", `M${x - s},${y - s}L${x + s},${y + s}M${x - s},${y + s}L${x + s},${y - s}`); el.setAttribute("stroke-width", 1.2 * u); }));
     }
     const domains = [...td.domains].sort((a, b) => b.power_W - a.power_W);
     for (const d of domains) {
       const c = colorOf(d.owner);
       const rpx = 4 + 10 * Math.min(1, Math.max(0, (Math.log10(Math.max(d.power_W, 1)) - 13) / 22));
-      const x = d.xyz_kpc[0], y = -d.xyz_kpc[1];
-      const sphere = svgEl("circle", { cx: x, cy: y, r: d.r_ly / LY_PER_KPC, fill: c.css, "fill-opacity": 0.12, stroke: c.css, "stroke-width": 1, "vector-effect": "non-scaling-stroke", "pointer-events": "none" });
-      D.appendChild(reg(scaledTurn, sphere, (el, u) => { el.style.display = d.r_ly / LY_PER_KPC > rpx * u ? "" : "none"; }));
+      const x = d.xyz_kpc[0], y = -d.xyz_kpc[1], rs = d.r_ly / LY_PER_KPC;
+      D.appendChild(entry(scaledTurn, svgEl("circle", { cx: x, cy: y, r: rs, fill: c.css, "fill-opacity": 0.12, stroke: c.css, "pointer-events": "none" }), circleBox(x, y, rs),
+                          (el, u) => { el.setAttribute("stroke-width", u); return rs > rpx * u; }));
       const m = svgEl("circle", { class: `domain${d.seat ? " seat" : ""}${c.textured ? " textured" : ""}`, cx: x, cy: y, fill: c.css, "fill-opacity": d.status === "active" ? 1 : 0.35, tabindex: 0, role: "button" });
-      reg(scaledTurn, m, (el, u) => el.setAttribute("r", rpx * u));
       m.addEventListener("click", () => selectAgent(d.owner));
       m.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectAgent(d.owner); } });
       m.addEventListener("pointerenter", (ev) => showTip(ev, d)); m.addEventListener("pointermove", (ev) => moveTip(ev)); m.addEventListener("pointerleave", hideTip);
       m.addEventListener("focus", (ev) => showTip(ev, d)); m.addEventListener("blur", hideTip);
-      D.appendChild(m);
-      if (d.seat) D.appendChild(reg(scaledTurn, svgEl("circle", { class: "seatring", cx: x, cy: y }), (el, u) => el.setAttribute("r", (rpx + 3) * u)));
-      if (d.seat && d.owner === state.selected) D.appendChild(reg(scaledTurn, svgEl("circle", { class: "selring", cx: x, cy: y }), (el, u) => el.setAttribute("r", (rpx + 7) * u)));
+      D.appendChild(entry(scaledTurn, m, ptBox(x, y), (el, u) => { el.setAttribute("r", rpx * u); el.setAttribute("stroke-width", 2 * u); }));
+      if (d.seat) D.appendChild(entry(scaledTurn, svgEl("circle", { class: "seatring", cx: x, cy: y }), ptBox(x, y), (el, u) => { el.setAttribute("r", (rpx + 3) * u); el.setAttribute("stroke-width", 1.5 * u); }));
+      if (d.seat && d.owner === state.selected) D.appendChild(entry(scaledTurn, svgEl("circle", { class: "selring", cx: x, cy: y }), ptBox(x, y), (el, u) => { el.setAttribute("r", (rpx + 7) * u); el.setAttribute("stroke-width", u); el.setAttribute("stroke-dasharray", `${2 * u} ${2 * u}`); }));
       if (d.seat) {
         const t = svgEl("text", { class: "label" }); t.textContent = d.owner;
-        L.appendChild(reg(scaledTurn, t, (el, u) => { el.setAttribute("x", x + (rpx + 5) * u); el.setAttribute("y", y + 4 * u); el.setAttribute("font-size", 12 * u); el.setAttribute("stroke-width", 3 * u); }));
+        L.appendChild(entry(scaledTurn, t, ptBox(x, y), (el, u) => { el.setAttribute("x", x + (rpx + 5) * u); el.setAttribute("y", y + 4 * u); el.setAttribute("font-size", 12 * u); el.setAttribute("stroke-width", 3 * u); }));
       }
     }
-    for (const { el, fn } of scaledTurn) fn(el, u);
-    lastHalf = state.view.half;
-    drawScalebar();
+    lastHalf = null; rescale();
   }
   function tipHtml(d) {
     const a = agentName(d.owner);
@@ -391,12 +402,17 @@
   for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => setTab(b.dataset.tab));
   document.addEventListener("keydown", (e) => { if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return; if (e.key === "ArrowLeft") $("#prev").click(); if (e.key === "ArrowRight") $("#next").click(); });
   const map = $("#map");
-  map.addEventListener("wheel", (e) => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.25 : 1 / 1.25, e.clientX, e.clientY); }, { passive: false });
+  let wheelAccum = 1, wheelPos = null, wheelRaf = 0;
+  map.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    wheelAccum *= e.deltaY < 0 ? 1.25 : 1 / 1.25; wheelPos = [e.clientX, e.clientY];
+    if (!wheelRaf) wheelRaf = requestAnimationFrame(() => { wheelRaf = 0; const f = wheelAccum; wheelAccum = 1; zoomBy(f, wheelPos[0], wheelPos[1]); });
+  }, { passive: false });
   let drag = null;
   map.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, cx: state.view.cx, cy: state.view.cy }; map.classList.add("dragging"); map.setPointerCapture(e.pointerId); });
   map.addEventListener("pointermove", (e) => { if (!drag) return; const u = unit(); state.view.cx = drag.cx - (e.clientX - drag.x) * u; state.view.cy = drag.cy + (e.clientY - drag.y) * u; applyView(); });
   const endDrag = () => { drag = null; map.classList.remove("dragging"); };
   map.addEventListener("pointerup", endDrag); map.addEventListener("pointercancel", endDrag);
-  window.addEventListener("resize", () => { lastHalf = null; applyView(); });
+  window.addEventListener("resize", () => { for (const l of [scaledBg, scaledTurn]) for (const e of l) e.sizedAt = null; lastHalf = null; applyView(); });
   init().catch((e) => { $("#status").textContent = `failed to load: ${e.message}`; console.error(e); });
 })();

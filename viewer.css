@@ -49,20 +49,20 @@ select, .btn { font: inherit; color: var(--text-primary); background: var(--surf
 .mapwrap { position: relative; background: var(--surface-1); border: 1px solid var(--grid); border-radius: 10px; overflow: hidden; }
 #map { display: block; width: 100%; aspect-ratio: 1 / 1; touch-action: none; cursor: grab; }
 #map.dragging { cursor: grabbing; }
-.ring { fill: none; stroke: var(--grid); stroke-width: 0.06; vector-effect: non-scaling-stroke; }
-.arm { fill: none; stroke: var(--axis); stroke-width: 1px; vector-effect: non-scaling-stroke; opacity: 0.9; }
+#layer-transit, #layer-bg { shape-rendering: optimizeSpeed; }
+.ring { fill: none; stroke: var(--grid); }
+.arm { fill: none; stroke: var(--axis); opacity: 0.9; }
 .armlabel, .celllabel { fill: var(--muted); paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; }   /* font-size and stroke-width are attributes in map units */
 .celldot { fill: var(--axis); }
 .sun { fill: var(--text-secondary); }
-.domain { stroke: var(--surface-1); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: pointer; }
-.domain.seat { stroke-width: 2px; }
-.domain.textured { stroke-dasharray: 3 2; }
-.seatring { fill: none; stroke: var(--text-primary); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
-.selring { fill: none; stroke: var(--text-primary); stroke-width: 1px; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; pointer-events: none; }
-.horizon { fill-opacity: 0.06; stroke-width: 1px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
-.track { fill: none; stroke: var(--axis); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.probe { stroke: var(--surface-1); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.event { fill: none; stroke: var(--text-secondary); stroke-width: 1.2px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.domain { stroke: var(--surface-1); cursor: pointer; }
+.domain.textured { stroke: var(--text-primary); }
+.seatring { fill: none; stroke: var(--text-primary); pointer-events: none; }
+.selring { fill: none; stroke: var(--text-primary); pointer-events: none; }
+.horizon { fill-opacity: 0.06; pointer-events: none; }
+.track { fill: none; stroke: var(--axis); }
+.probe { stroke: var(--surface-1); }
+.event { fill: none; stroke: var(--text-secondary); pointer-events: none; }
 .event.natural { stroke: var(--serious); }
 .label { fill: var(--text-primary); font-weight: 600; paint-order: stroke; stroke: var(--surface-1); stroke-linejoin: round; pointer-events: none; }
 .tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-width: 260px; }
