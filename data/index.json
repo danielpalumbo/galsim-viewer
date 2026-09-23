@@ -1,17 +1,17 @@
 {
- "generated_at": "2026-09-23T14:16:37+00:00",
+ "generated_at": "2026-09-23T14:47:42+00:00",
  "runs": [
   {
    "run_id": "run01",
    "label": "Run 1: 10 agents, shared goal brain_sim_molecular (Sonnet 5 agents, Fable 5.1 GM)",
    "backend": "claude_code",
    "n_agents": 10,
-   "turns_done": 7,
+   "turns_done": 8,
    "n_turns": 120,
-   "last_year": 700.0,
-   "generated_at": "2026-09-23T14:16:37+00:00",
+   "last_year": 800.0,
+   "generated_at": "2026-09-23T14:47:42+00:00",
    "finished": false,
-   "next_due_at": "2026-09-24T13:50:50+00:00",
+   "next_due_at": "2026-09-24T14:11:41+00:00",
    "paused": null,
    "halted": null
   },
