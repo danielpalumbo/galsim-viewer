@@ -36,6 +36,9 @@ select, .btn { font: inherit; color: var(--text-primary); background: var(--surf
 .banner .goaltext { font-weight: 500; }
 .banner details { margin: 4px 0 0; }
 .banner .rubric { white-space: pre-wrap; color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+.summary { margin: 10px 16px 0; padding: 10px 14px; background: var(--surface-1); border: 1px solid var(--grid); border-radius: 8px; max-width: 1568px; }
+.summary .sumhead { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.summary p { margin: 0; max-width: 110ch; }
 .layout { display: grid; grid-template-columns: minmax(320px, 1.3fr) minmax(320px, 1fr); gap: 16px; padding: 16px; max-width: 1600px; margin: 0 auto; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }

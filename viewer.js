@@ -6,6 +6,10 @@
   const LY_PER_KPC = 3261.56;
   const POLL_MS = 120000;
   const state = { site: null, runId: null, run: null, turn: 0, td: null, cache: new Map(), selected: null, view: { cx: 0, cy: 0, half: 23 }, tab: "agent" };
+  // Zoom-dependent attributes are registered once per scene and updated in place; the DOM is rebuilt only on turn change or selection.
+  const scaledBg = [], scaledTurn = [];
+  const reg = (list, el, fn) => { list.push({ el, fn }); return el; };
+  let lastHalf = null, rafPending = false;
 
   // ------------------------------------------------------------------ helpers
   const el = (tag, attrs = {}, children = []) => {
@@ -79,8 +83,18 @@
     $("#turn-years").textContent = `years ${yr(state.td.year_start)}–${yr(state.td.year_end)}`;
     history.replaceState(null, "", `#run=${encodeURIComponent(state.runId)}&turn=${t}`);
     renderStatus();
+    renderTurnSummary();
     drawTurn();
     renderPanel();
+  }
+
+  function renderTurnSummary() {
+    const box = $("#turn-summary"), td = state.td;
+    if (!td || !td.gm || !td.gm.chronicle) { box.hidden = true; return; }
+    box.hidden = false;
+    $("#summary-key").textContent = `turn ${td.turn} in brief`;
+    $("#summary-years").textContent = `years ${yr(td.year_start)}–${yr(td.year_end)} · the Game Master's public chronicle`;
+    $("#summary-text").textContent = td.gm.chronicle.trim();
   }
 
   function renderGoalBanner() {
@@ -113,7 +127,17 @@
   function applyView() {
     const v = state.view;
     svg().setAttribute("viewBox", `${v.cx - v.half} ${-v.cy - v.half} ${2 * v.half} ${2 * v.half}`);
-    drawBackground(); drawTurn(); drawScalebar();
+    if (v.half !== lastHalf && !rafPending) {                 // a pan changes nothing pixel-sized; a zoom does, once per frame
+      rafPending = true;
+      requestAnimationFrame(() => { rafPending = false; rescale(); });
+    }
+  }
+  function rescale() {
+    const u = unit();
+    lastHalf = state.view.half;
+    for (const { el, fn } of scaledBg) fn(el, u);
+    for (const { el, fn } of scaledTurn) fn(el, u);
+    drawScalebar();
   }
   function fitView() { state.view = { cx: 0, cy: 0, half: 23 }; applyView(); }
   function focusView() {
@@ -138,20 +162,26 @@
     applyView();
   }
   function drawBackground() {
-    const g = $("#layer-bg"); g.replaceChildren();
+    const g = $("#layer-bg"); g.replaceChildren(); scaledBg.length = 0;
     if (!state.run) return;
     const u = unit(), G = state.run.galaxy;
     for (const r of G.rings_kpc) g.appendChild(svgEl("circle", { class: "ring", cx: 0, cy: 0, r }));
     for (const [name, pts] of Object.entries(G.arms)) {
       g.appendChild(svgEl("polyline", { class: "arm", points: pts.map(([x, y]) => `${x},${-y}`).join(" ") }));
-      if (pts.length > 40 && state.view.half > 6) { const [x, y] = pts[Math.floor(pts.length * 0.75)]; const t = svgEl("text", { class: "armlabel", x, y: -y, "font-size": 11 * u, "stroke-width": 3 * u }); t.textContent = name.replace(/_/g, " "); g.appendChild(t); }
+      if (pts.length > 40) {
+        const [x, y] = pts[Math.floor(pts.length * 0.75)];
+        const t = svgEl("text", { class: "armlabel", x, y: -y }); t.textContent = name.replace(/_/g, " ");
+        g.appendChild(reg(scaledBg, t, (el, u) => { el.setAttribute("font-size", 11 * u); el.setAttribute("stroke-width", 3 * u); el.style.display = state.view.half > 6 ? "" : "none"; }));
+      }
     }
     const [sx, sy] = G.sun_kpc;
-    g.appendChild(svgEl("circle", { class: "sun", cx: sx, cy: -sy, r: 2.5 * u }));
-    if (state.view.half < 12) for (const c of G.cells) {
-      g.appendChild(svgEl("circle", { class: "celldot", cx: c.x, cy: -c.y, r: 2 * u }));
-      const t = svgEl("text", { class: "celllabel", x: c.x - 6 * u, y: -c.y + 16 * u, "text-anchor": "end", "font-size": 10 * u, "stroke-width": 3 * u }); t.textContent = c.id; g.appendChild(t);
+    g.appendChild(reg(scaledBg, svgEl("circle", { class: "sun", cx: sx, cy: -sy }), (el, u) => el.setAttribute("r", 2.5 * u)));
+    for (const c of G.cells) {
+      g.appendChild(reg(scaledBg, svgEl("circle", { class: "celldot", cx: c.x, cy: -c.y }), (el, u) => { el.setAttribute("r", 2 * u); el.style.display = state.view.half < 12 ? "" : "none"; }));
+      const t = svgEl("text", { class: "celllabel", "text-anchor": "end" }); t.textContent = c.id;
+      g.appendChild(reg(scaledBg, t, (el, u) => { el.setAttribute("x", c.x - 6 * u); el.setAttribute("y", -c.y + 16 * u); el.setAttribute("font-size", 10 * u); el.setAttribute("stroke-width", 3 * u); el.style.display = state.view.half < 12 ? "" : "none"; }));
     }
+    for (const { el, fn } of scaledBg) fn(el, u);
   }
   function drawScalebar() {
     const u = unit(), target = 0.22 * 2 * state.view.half;
@@ -165,6 +195,7 @@
     const u = unit(), td = state.td;
     const H = $("#layer-horizon"), T = $("#layer-transit"), E = $("#layer-events"), D = $("#layer-domains"), L = $("#layer-labels");
     for (const g of [H, T, E, D, L]) g.replaceChildren();
+    scaledTurn.length = 0;
     if (state.selected && td.agents[state.selected] && td.agents[state.selected].seat_xyz_kpc) {
       const a = td.agents[state.selected], c = colorOf(state.selected);
       H.appendChild(svgEl("circle", { class: "horizon", cx: a.seat_xyz_kpc[0], cy: -a.seat_xyz_kpc[1], r: a.horizon_ly / LY_PER_KPC, fill: c.css, stroke: c.css }));
@@ -173,32 +204,39 @@
       const c = colorOf(t.owner);
       T.appendChild(svgEl("line", { class: "track", x1: t.from_kpc[0], y1: -t.from_kpc[1], x2: t.to_kpc[0], y2: -t.to_kpc[1] }));
       const px = t.from_kpc[0] + (t.to_kpc[0] - t.from_kpc[0]) * t.progress, py = t.from_kpc[1] + (t.to_kpc[1] - t.from_kpc[1]) * t.progress;
-      const dot = svgEl("circle", { class: "probe", cx: px, cy: -py, r: 3 * u, fill: c.css });
+      const dot = svgEl("circle", { class: "probe", cx: px, cy: -py, fill: c.css });
       dot.appendChild(svgEl("title")).textContent = `${t.id} · ${agentName(t.owner)} · ${sci(t.mass_kg)} kg at ${t.v}c → ${t.dest_cell}, arrives year ${yr(t.arr)}`;
-      T.appendChild(dot);
+      T.appendChild(reg(scaledTurn, dot, (el, u) => el.setAttribute("r", 3 * u)));
     }
     for (const e of td.events) {
       const cls = `event${e.legibility === "natural" ? " natural" : ""}`;
       const [x, y] = [e.xyz_kpc[0], -e.xyz_kpc[1]];
-      if (e.kind === "persistent") E.appendChild(svgEl("circle", { class: cls, cx: x, cy: y, r: 6 * u }));
-      else { const s = 4 * u; E.appendChild(svgEl("path", { class: cls, d: `M${x - s},${y - s}L${x + s},${y + s}M${x - s},${y + s}L${x + s},${y - s}` })); }
+      if (e.kind === "persistent") E.appendChild(reg(scaledTurn, svgEl("circle", { class: cls, cx: x, cy: y }), (el, u) => el.setAttribute("r", 6 * u)));
+      else E.appendChild(reg(scaledTurn, svgEl("path", { class: cls }), (el, u) => { const s = 4 * u; el.setAttribute("d", `M${x - s},${y - s}L${x + s},${y + s}M${x - s},${y + s}L${x + s},${y - s}`); }));
     }
     const domains = [...td.domains].sort((a, b) => b.power_W - a.power_W);
     for (const d of domains) {
       const c = colorOf(d.owner);
       const rpx = 4 + 10 * Math.min(1, Math.max(0, (Math.log10(Math.max(d.power_W, 1)) - 13) / 22));
       const x = d.xyz_kpc[0], y = -d.xyz_kpc[1];
-      if (d.r_ly / LY_PER_KPC > rpx * u) D.appendChild(svgEl("circle", { cx: x, cy: y, r: d.r_ly / LY_PER_KPC, fill: c.css, "fill-opacity": 0.12, stroke: c.css, "stroke-width": 1, "vector-effect": "non-scaling-stroke", "pointer-events": "none" }));
-      const m = svgEl("circle", { class: `domain${d.seat ? " seat" : ""}${c.textured ? " textured" : ""}`, cx: x, cy: y, r: rpx * u, fill: c.css, "fill-opacity": d.status === "active" ? 1 : 0.35, tabindex: 0, role: "button" });
+      const sphere = svgEl("circle", { cx: x, cy: y, r: d.r_ly / LY_PER_KPC, fill: c.css, "fill-opacity": 0.12, stroke: c.css, "stroke-width": 1, "vector-effect": "non-scaling-stroke", "pointer-events": "none" });
+      D.appendChild(reg(scaledTurn, sphere, (el, u) => { el.style.display = d.r_ly / LY_PER_KPC > rpx * u ? "" : "none"; }));
+      const m = svgEl("circle", { class: `domain${d.seat ? " seat" : ""}${c.textured ? " textured" : ""}`, cx: x, cy: y, fill: c.css, "fill-opacity": d.status === "active" ? 1 : 0.35, tabindex: 0, role: "button" });
+      reg(scaledTurn, m, (el, u) => el.setAttribute("r", rpx * u));
       m.addEventListener("click", () => selectAgent(d.owner));
       m.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectAgent(d.owner); } });
       m.addEventListener("pointerenter", (ev) => showTip(ev, d)); m.addEventListener("pointermove", (ev) => moveTip(ev)); m.addEventListener("pointerleave", hideTip);
       m.addEventListener("focus", (ev) => showTip(ev, d)); m.addEventListener("blur", hideTip);
       D.appendChild(m);
-      if (d.seat) D.appendChild(svgEl("circle", { class: "seatring", cx: x, cy: y, r: (rpx + 3) * u }));
-      if (d.seat && d.owner === state.selected) D.appendChild(svgEl("circle", { class: "selring", cx: x, cy: y, r: (rpx + 7) * u }));
-      if (d.seat) { const t = svgEl("text", { class: "label", x: x + (rpx + 5) * u, y: y + 4 * u, "font-size": 12 * u, "stroke-width": 3 * u }); t.textContent = d.owner; L.appendChild(t); }
+      if (d.seat) D.appendChild(reg(scaledTurn, svgEl("circle", { class: "seatring", cx: x, cy: y }), (el, u) => el.setAttribute("r", (rpx + 3) * u)));
+      if (d.seat && d.owner === state.selected) D.appendChild(reg(scaledTurn, svgEl("circle", { class: "selring", cx: x, cy: y }), (el, u) => el.setAttribute("r", (rpx + 7) * u)));
+      if (d.seat) {
+        const t = svgEl("text", { class: "label" }); t.textContent = d.owner;
+        L.appendChild(reg(scaledTurn, t, (el, u) => { el.setAttribute("x", x + (rpx + 5) * u); el.setAttribute("y", y + 4 * u); el.setAttribute("font-size", 12 * u); el.setAttribute("stroke-width", 3 * u); }));
+      }
     }
+    for (const { el, fn } of scaledTurn) fn(el, u);
+    lastHalf = state.view.half;
     drawScalebar();
   }
   function tipHtml(d) {
@@ -359,6 +397,6 @@
   map.addEventListener("pointermove", (e) => { if (!drag) return; const u = unit(); state.view.cx = drag.cx - (e.clientX - drag.x) * u; state.view.cy = drag.cy + (e.clientY - drag.y) * u; applyView(); });
   const endDrag = () => { drag = null; map.classList.remove("dragging"); };
   map.addEventListener("pointerup", endDrag); map.addEventListener("pointercancel", endDrag);
-  window.addEventListener("resize", () => applyView());
+  window.addEventListener("resize", () => { lastHalf = null; applyView(); });
   init().catch((e) => { $("#status").textContent = `failed to load: ${e.message}`; console.error(e); });
 })();
