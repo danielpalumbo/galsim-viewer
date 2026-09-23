@@ -39,6 +39,9 @@ select, .btn { font: inherit; color: var(--text-primary); background: var(--surf
 .summary { margin: 10px 16px 0; padding: 10px 14px; background: var(--surface-1); border: 1px solid var(--grid); border-radius: 8px; max-width: 1568px; }
 .summary .sumhead { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
 .summary p { margin: 0; max-width: 110ch; }
+#summary-why { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--grid); }
+.themes { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
+.theme { font-size: 12px; padding: 2px 9px; border-radius: 12px; border: 1px solid var(--axis); color: var(--text-secondary); }
 .layout { display: grid; grid-template-columns: minmax(320px, 1.3fr) minmax(320px, 1fr); gap: 16px; padding: 16px; max-width: 1600px; margin: 0 auto; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }

@@ -95,6 +95,14 @@
     $("#summary-key").textContent = `turn ${td.turn} in brief`;
     $("#summary-years").textContent = `years ${yr(td.year_start)}–${yr(td.year_end)} · the Game Master's public chronicle`;
     $("#summary-text").textContent = td.gm.chronicle.trim();
+    const syn = td.gm.synopsis, why = $("#summary-why");
+    if (syn && syn.why) {
+      why.hidden = false;
+      $("#why-text").textContent = syn.why;
+      $("#why-model").textContent = `an analyst model's synthesis of the agents' private reasoning (${syn.model || "model"})`;
+      $("#why-themes").replaceChildren(...(syn.themes || []).map((t) => el("span", { class: "theme", text: t })));
+      $("#why-divergences").textContent = syn.divergences || "";
+    } else why.hidden = true;
   }
 
   function renderGoalBanner() {
