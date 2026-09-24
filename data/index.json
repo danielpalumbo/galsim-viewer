@@ -1,6 +1,20 @@
 {
- "generated_at": "2026-09-24T02:31:01+00:00",
+ "generated_at": "2026-09-24T16:55:23+00:00",
  "runs": [
+  {
+   "run_id": "run02_opus",
+   "label": "run02 A/B: turn 0 replayed with Opus 5.5 agents",
+   "backend": "claude_code",
+   "n_agents": 10,
+   "turns_done": 1,
+   "n_turns": 120,
+   "last_year": 100.0,
+   "generated_at": "2026-09-24T16:55:23+00:00",
+   "finished": false,
+   "next_due_at": "2026-09-25T16:38:12+00:00",
+   "paused": null,
+   "halted": null
+  },
   {
    "run_id": "run02",
    "label": "run02: every human brain inside 1 ly",
