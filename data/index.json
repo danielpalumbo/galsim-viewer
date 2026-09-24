@@ -1,6 +1,20 @@
 {
- "generated_at": "2026-09-23T15:26:41+00:00",
+ "generated_at": "2026-09-24T02:31:01+00:00",
  "runs": [
+  {
+   "run_id": "run02",
+   "label": "run02: every human brain inside 1 ly",
+   "backend": "claude_code",
+   "n_agents": 10,
+   "turns_done": 1,
+   "n_turns": 120,
+   "last_year": 100.0,
+   "generated_at": "2026-09-24T02:31:01+00:00",
+   "finished": false,
+   "next_due_at": "2026-09-25T02:01:52+00:00",
+   "paused": null,
+   "halted": null
+  },
   {
    "run_id": "run01",
    "label": "Run 1: 10 agents, shared goal brain_sim_molecular (Sonnet 5 agents, Fable 5.1 GM)",
