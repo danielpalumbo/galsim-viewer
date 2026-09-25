@@ -35,7 +35,7 @@
   async function init() {
     state.site = await getJSON(bust("data/index.json"));
     const sel = $("#run-select");
-    sel.replaceChildren(...state.site.runs.map((r) => el("option", { value: r.run_id, text: `${r.label} · ${r.turns_done} turn${r.turns_done === 1 ? "" : "s"}${r.backend === "mock" ? " · scripted, no models" : ""}` })));
+    sel.replaceChildren(...state.site.runs.map((r) => el("option", { value: r.run_id, text: `${runStateOf(r) === "running" ? "LIVE · " : runStateOf(r) === "archived" ? "ARCHIVED · " : runStateOf(r).toUpperCase() + " · "}${r.label} · ${r.turns_done} turn${r.turns_done === 1 ? "" : "s"}${r.backend === "mock" ? " · scripted, no models" : ""}` })));
     const params = new URLSearchParams(location.hash.slice(1));
     const wanted = params.get("run");
     state.runId = state.site.runs.some((r) => r.run_id === wanted) ? wanted : (state.site.runs[0] || {}).run_id;
@@ -53,6 +53,7 @@
     const slider = $("#turn-slider");
     slider.max = Math.max(0, last);
     $("#title").textContent = `galsim · ${state.run.label}`;
+    renderRunState();
     renderGoalBanner();
     buildLegend();
     drawBackground();
@@ -67,6 +68,7 @@
       const wasLast = state.turn === state.run.turns.length - 1;
       state.run = fresh;
       state.cache.clear();
+      renderRunState();
       $("#turn-slider").max = Math.max(0, fresh.turns.length - 1);
       await setTurn(wasLast ? fresh.turns.length - 1 : state.turn);
     } catch (e) { console.warn("poll failed", e); }
@@ -118,13 +120,50 @@
     }
   }
 
+  // A run's state: exported by newer harnesses; older exports are inferred (a scripted run is archival, otherwise trust the flags).
+  function runStateOf(r) {
+    const s = r.status || r;
+    if (s.state) return s.state;
+    if (s.archived) return "archived";
+    if (s.halted) return "halted";
+    if (s.paused) return "paused";
+    if (s.finished) return "finished";
+    return r.backend === "mock" ? "archived" : "running";
+  }
+
+  function renderRunState() {
+    const box = $("#run-state"); box.replaceChildren();
+    const r = state.run, s = r.status, st = runStateOf(r);
+    const done = r.turns.length, lastYear = s.last_year, when = r.generated_at ? new Date(r.generated_at).toLocaleString() : null;
+    const lastLine = done ? `Last turn played: turn ${done - 1} (year ${yr(lastYear)})${when ? `, completed ${when}` : ""}.` : "No turns completed.";
+    box.className = `runstate ${st === "running" ? "live" : st}`;
+    box.hidden = false;
+    if (st === "archived") {
+      const a = s.archived || {};
+      box.append(el("span", { class: "tag", text: "Archived run" }),
+        el("span", { class: "headline", text: "This run is archival: no further turns will be played and nothing here updates." }),
+        el("span", { class: "detail", text: `${a.reason ? a.reason + (a.reason.endsWith(".") ? "" : ".") + " " : ""}${a.since ? `Archived ${a.since}. ` : ""}${lastLine}` }));
+    } else if (st === "halted") {
+      box.append(el("span", { class: "tag", text: "Halted" }), el("span", { class: "headline", text: `The run stopped and needs a human: ${s.halted}` }), el("span", { class: "detail", text: lastLine }));
+    } else if (st === "paused") {
+      box.append(el("span", { class: "tag", text: "Paused" }), el("span", { class: "headline", text: `Waiting to retry: ${s.paused}` }), el("span", { class: "detail", text: lastLine }));
+    } else if (st === "finished") {
+      box.append(el("span", { class: "tag", text: "Finished" }), el("span", { class: "headline", text: `All ${r.n_turns_configured} configured turns have been played.` }), el("span", { class: "detail", text: lastLine }));
+    } else {
+      const cadence = r.schedule_note || (r.turn_interval_s ? `at most one turn per ${r.turn_interval_s % 3600 === 0 ? (r.turn_interval_s / 3600) + " h" : (r.turn_interval_s / 3600).toFixed(1) + " h"}` : "turns run when the operator steps the run");
+      const next = s.next_due_at ? `Next turn no earlier than ${new Date(s.next_due_at).toLocaleString()} (${untilText(s.next_due_at)}); this page refreshes itself.` : "This page refreshes itself when a turn lands.";
+      box.append(el("span", { class: "tag", text: "Live" }), el("span", { class: "headline", text: `This run is in progress: ${cadence}.` }), el("span", { class: "detail", text: `${next} ${lastLine}` }));
+    }
+  }
+
   function renderStatus() {
-    const s = state.run.status;
+    const s = state.run.status, st = runStateOf(state.run);
     const parts = [`turn ${state.turn} of ${state.run.n_turns_configured} configured (${state.run.turns.length} done)`];
-    if (s.halted) parts.push(`halted: ${s.halted}`);
-    else if (s.paused) parts.push(`paused: ${s.paused}`);
-    else if (s.finished) parts.push("finished");
-    else if (s.next_due_at) parts.push(`next turn ${untilText(s.next_due_at)} (${new Date(s.next_due_at).toLocaleString()})`);
+    if (st === "archived") parts.push("archived");
+    else if (st === "halted") parts.push(`halted: ${s.halted}`);
+    else if (st === "paused") parts.push(`paused: ${s.paused}`);
+    else if (st === "finished") parts.push("finished");
+    else if (s.next_due_at) parts.push(`next turn no earlier than ${new Date(s.next_due_at).toLocaleString()} (${untilText(s.next_due_at)})`);
     if (state.run.generated_at) parts.push(`last turn completed ${ago(state.run.generated_at)}`);
     $("#status").textContent = parts.join(" · ");
   }
@@ -381,7 +420,9 @@
     const r = state.run, s = r.status;
     pane.appendChild(el("h2", { text: r.label }));
     pane.appendChild(el("div", { class: "stats" }, [stat("backend", r.backend), stat("GM model", r.models.gm), stat("agent model", r.models.agent), stat("goal", r.goal_id), stat("turns done", `${r.turns.length} / ${r.n_turns_configured}`), stat("last year", yr(s.last_year)), stat("events in ledger", String(s.events)), stat("model calls", String(s.usage.calls))]));
-    if (r.turn_interval_s) pane.appendChild(el("p", { class: "small muted", text: `paced at one turn per ${(r.turn_interval_s / 3600).toFixed(1)} h${s.next_due_at ? `; next due ${new Date(s.next_due_at).toLocaleString()}` : ""}` }));
+    const st = runStateOf(r);
+    if (st === "archived") pane.appendChild(el("p", { class: "small bad", text: `archived${s.archived && s.archived.since ? " " + s.archived.since : ""}: ${(s.archived && s.archived.reason) || "no further turns"}` }));
+    else if (r.turn_interval_s) pane.appendChild(el("p", { class: "small muted", text: `paced at one turn per ${(r.turn_interval_s / 3600).toFixed(1)} h${s.next_due_at ? `; next due ${new Date(s.next_due_at).toLocaleString()}` : ""}` }));
     if (s.paused) pane.appendChild(el("p", { class: "small bad", text: `paused: ${s.paused}` }));
     if (s.halted) pane.appendChild(el("p", { class: "small bad", text: `halted: ${s.halted}` }));
     pane.appendChild(el("h3", { text: "Agents" }));

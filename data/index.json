@@ -11,13 +11,15 @@
    "last_year": 200.0,
    "generated_at": "2026-09-24T17:23:18+00:00",
    "finished": false,
-   "next_due_at": "2026-09-25T17:02:33+00:00",
+   "next_due_at": "2026-09-25T07:02:33+00:00",
    "paused": null,
-   "halted": null
+   "halted": null,
+   "state": "running",
+   "archived": null
   },
   {
    "run_id": "run02",
-   "label": "run02: every human brain inside 1 ly",
+   "label": "run02 baseline (Sonnet 5 agents, turn 0 only)",
    "backend": "claude_code",
    "n_agents": 10,
    "turns_done": 1,
@@ -25,9 +27,14 @@
    "last_year": 100.0,
    "generated_at": "2026-09-24T02:31:01+00:00",
    "finished": false,
-   "next_due_at": "2026-09-25T02:01:52+00:00",
+   "next_due_at": null,
    "paused": null,
-   "halted": null
+   "halted": null,
+   "state": "archived",
+   "archived": {
+    "since": "2026-09-24",
+    "reason": "Turn-0 baseline with Sonnet 5 agents for the model comparison against Opus 5.5 (same seed, goal and prompts as the live run). Not advanced."
+   }
   },
   {
    "run_id": "run01",
@@ -39,9 +46,14 @@
    "last_year": 900.0,
    "generated_at": "2026-09-23T15:26:41+00:00",
    "finished": false,
-   "next_due_at": "2026-09-24T14:42:44+00:00",
+   "next_due_at": null,
    "paused": null,
-   "halted": null
+   "halted": null,
+   "state": "archived",
+   "archived": {
+    "since": "2026-09-23",
+    "reason": "Nine-turn test run of the harness with the earlier brain-simulation goal. Retired because the Game Master's private rulings named other agents in turns 1 to 8, a light-cone leak the validator now rejects."
+   }
   },
   {
    "run_id": "smoke_cc01",
@@ -55,7 +67,12 @@
    "finished": true,
    "next_due_at": null,
    "paused": null,
-   "halted": null
+   "halted": null,
+   "state": "archived",
+   "archived": {
+    "since": "2026-09-17",
+    "reason": "Three-turn smoke test of the headless model backend with three agents."
+   }
   },
   {
    "run_id": "mock_run01",
@@ -69,7 +86,12 @@
    "finished": true,
    "next_due_at": null,
    "paused": null,
-   "halted": null
+   "halted": null,
+   "state": "archived",
+   "archived": {
+    "since": "2026-09-16",
+    "reason": "Scripted agents and a rule-based Game Master, no model calls: a harness test."
+   }
   }
  ]
 }

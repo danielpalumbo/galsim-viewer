@@ -30,6 +30,21 @@ html, body { margin: 0; background: var(--page); color: var(--text-primary); fon
 select, .btn { font: inherit; color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--axis); border-radius: 6px; padding: 4px 10px; }
 .btn { cursor: pointer; min-width: 34px; }
 .btn:hover { border-color: var(--text-secondary); }
+.runstate { margin: 12px 16px 0; padding: 8px 14px; border-radius: 8px; max-width: 1568px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; border: 1px solid var(--grid); background: var(--surface-1); }
+.runstate .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.runstate.live { border-left: 4px solid var(--good); }
+.runstate.live .tag { background: var(--good); color: #fff; }
+.runstate.paused { border-left: 4px solid var(--warning); }
+.runstate.paused .tag { background: var(--warning); color: #0b0b0b; }
+.runstate.halted { border-left: 4px solid var(--critical); }
+.runstate.halted .tag { background: var(--critical); color: #fff; }
+.runstate.finished { border-left: 4px solid var(--s7); }
+.runstate.finished .tag { background: var(--s7); color: #fff; }
+.runstate.archived { padding: 14px 18px; border: 2px solid var(--serious); background: color-mix(in srgb, var(--serious) 14%, var(--surface-1)); font-size: 16px; }
+.runstate.archived .tag { background: var(--serious); color: #fff; font-size: 14px; padding: 4px 12px; }
+.runstate.archived .headline { font-weight: 700; }
+.runstate .detail { color: var(--text-secondary); font-size: 13px; flex-basis: 100%; }
+.runstate.archived .detail { font-size: 14px; color: var(--text-primary); }
 .banner { margin: 12px 16px 0; padding: 10px 14px; background: var(--surface-1); border: 1px solid var(--grid); border-left: 4px solid var(--s1); border-radius: 8px; max-width: 1568px; }
 .banner .goalline { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .banner .goalkey { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
