@@ -1,17 +1,17 @@
 {
- "generated_at": "2026-09-27T09:01:42+00:00",
+ "generated_at": "2026-09-27T09:46:32+00:00",
  "runs": [
   {
    "run_id": "run02_opus",
    "label": "run02 (Opus 5.5 agents): every human brain inside 1 ly",
    "backend": "claude_code",
    "n_agents": 10,
-   "turns_done": 10,
+   "turns_done": 11,
    "n_turns": 120,
-   "last_year": 1000.0,
-   "generated_at": "2026-09-27T09:01:42+00:00",
+   "last_year": 2000.0,
+   "generated_at": "2026-09-27T09:46:32+00:00",
    "finished": false,
-   "next_due_at": "2026-09-27T21:55:02+00:00",
+   "next_due_at": "2026-09-27T22:56:58+00:00",
    "paused": null,
    "halted": null,
    "state": "running",
