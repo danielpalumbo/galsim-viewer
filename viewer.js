@@ -143,6 +143,7 @@
       box.append(el("span", { class: "tag", text: "Archived run" }),
         el("span", { class: "headline", text: "This run is archival: no further turns will be played and nothing here updates." }),
         el("span", { class: "detail", text: `${a.reason ? a.reason + (a.reason.endsWith(".") ? "" : ".") + " " : ""}${a.since ? `Archived ${a.since}. ` : ""}${lastLine}` }));
+      if (r.technosignatures) box.appendChild(technosignatureBlock(r.technosignatures));
     } else if (st === "halted") {
       box.append(el("span", { class: "tag", text: "Halted" }), el("span", { class: "headline", text: `The run stopped and needs a human: ${s.halted}` }), el("span", { class: "detail", text: lastLine }));
     } else if (st === "paused") {
@@ -154,6 +155,25 @@
       const next = s.next_due_at ? `Next turn no earlier than ${new Date(s.next_due_at).toLocaleString()} (${untilText(s.next_due_at)}); this page refreshes itself.` : "This page refreshes itself when a turn lands.";
       box.append(el("span", { class: "tag", text: "Live" }), el("span", { class: "headline", text: `This run is in progress: ${cadence}.` }), el("span", { class: "detail", text: `${next} ${lastLine}` }));
     }
+  }
+
+  // Policy: every archived run carries a retrospective of what an outside observer could have seen, and the confounders.
+  function technosignatureBlock(ts) {
+    const d = el("details", { class: "techno" }, [el("summary", { text: "Technosignatures over the run: what an outside observer could have seen" })]);
+    d.open = true;
+    if (ts.summary) d.appendChild(el("p", { class: "tsummary", text: ts.summary }));
+    if ((ts.timeline || []).length) {
+      const tb = el("table", { class: "t" }, [el("tr", {}, ["years", "observable signatures", "detectability"].map((h) => el("th", { text: h })))]);
+      for (const row of ts.timeline) tb.appendChild(el("tr", {}, [el("td", { class: "yrs", text: row.years }), el("td", { text: row.signatures }), el("td", { text: row.detectability })]));
+      d.appendChild(tb);
+    }
+    if ((ts.confounders || []).length) {
+      d.appendChild(el("h4", { text: "Natural confounders" }));
+      d.appendChild(el("ul", {}, ts.confounders.map((c) => el("li", { text: c }))));
+    }
+    if (ts.caveats) d.appendChild(el("p", { class: "small muted", text: `Caveats: ${ts.caveats}` }));
+    d.appendChild(el("p", { class: "small muted", text: `Written by ${ts.model || "the analyst model"}${ts.generated_at ? " on " + new Date(ts.generated_at).toLocaleDateString() : ""} from the run's event ledger, metrics and chronicles.` }));
+    return d;
   }
 
   function renderStatus() {
