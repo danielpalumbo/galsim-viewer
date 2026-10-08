@@ -341,6 +341,7 @@
 
   // ------------------------------------------------------------------ panel
   function setTab(name) { state.tab = name; for (const b of document.querySelectorAll(".tab")) b.classList.toggle("active", b.dataset.tab === name); for (const p of document.querySelectorAll(".tabpane")) p.classList.toggle("active", p.id === `tab-${name}`); }
+  function flop(x) { if (!x || !isFinite(x)) return "0"; const e = Math.floor(Math.log10(x)); const m = x / 10 ** e; return `${m.toFixed(m >= 9.95 ? 0 : 1)}e${e}`; }
   function stat(k, v) { return el("div", { class: "stat" }, [el("div", { class: "v", text: v }), el("div", { class: "k", text: k })]); }
   function quote(text) { return el("div", { class: "quote", text: text || "(none)" }); }
   function renderPanel() { renderAgentTab(); renderGmTab(); renderEventsTab(); renderRunTab(); }
@@ -423,7 +424,7 @@
     if (gm.compressed_update) pane.appendChild(el("details", {}, [el("summary", { text: "Compressed chronicle (rewritten this turn)" }), quote(gm.compressed_update)]));
     const tc = Object.entries(gm.tool_calls || {}).sort((a, b) => b[1] - a[1]);
     if (tc.length) { const tb = el("table", { class: "t" }, [el("tr", {}, [el("th", { text: "tool" }), el("th", { text: "calls" })])]); for (const [k, n] of tc) tb.appendChild(el("tr", {}, [el("td", { text: k }), el("td", { class: "num", text: String(n) })])); pane.appendChild(el("details", {}, [el("summary", { text: "Tool calls" }), tb])); }
-    if (gm.usage) pane.appendChild(el("p", { class: "muted small", text: `${gm.usage.calls} model calls · ${num(gm.usage.output_tokens)} output tokens · ${num(gm.usage.cache_read_input_tokens)} cached input · list-price estimate $${gm.usage.cost_estimate_usd.toFixed(2)}` }));
+    if (gm.usage) pane.appendChild(el("p", { class: "muted small", text: `${gm.usage.calls} model calls · ${num(gm.usage.output_tokens)} output tokens · ${num(gm.usage.cache_read_input_tokens)} cached input · list-price estimate $${gm.usage.cost_estimate_usd.toFixed(2)}${gm.usage.flops_estimate ? ` · compute ≈ ${flop(gm.usage.flops_estimate)} FLOP (assumed model sizes, see Run tab)` : ""}` }));
   }
 
   function renderEventsTab() {
@@ -440,7 +441,7 @@
     const pane = $("#tab-run"); pane.replaceChildren();
     const r = state.run, s = r.status;
     pane.appendChild(el("h2", { text: r.label }));
-    pane.appendChild(el("div", { class: "stats" }, [stat("backend", r.backend), stat("GM model", r.models.gm), stat("agent model", r.models.agent), stat("goal", r.goal_id), stat("turns done", `${r.turns.length} / ${r.n_turns_configured}`), stat("last year", yr(s.last_year)), stat("events in ledger", String(s.events)), stat("model calls", String(s.usage.calls))]));
+    pane.appendChild(el("div", { class: "stats" }, [stat("backend", r.backend), stat("GM model", r.models.gm), stat("agent model", r.models.agent), stat("goal", r.goal_id), stat("turns done", `${r.turns.length} / ${r.n_turns_configured}`), stat("last year", yr(s.last_year)), stat("events in ledger", String(s.events)), stat("model calls", String(s.usage.calls)), stat("compute, estimated", s.usage.flops_estimate ? `${flop(s.usage.flops_estimate)} FLOP` : "–")]));
     const st = runStateOf(r);
     if (st === "archived") pane.appendChild(el("p", { class: "small bad", text: `archived${s.archived && s.archived.since ? " " + s.archived.since : ""}: ${(s.archived && s.archived.reason) || "no further turns"}` }));
     else if (r.turn_interval_s) pane.appendChild(el("p", { class: "small muted", text: `paced at one turn per ${(r.turn_interval_s / 3600).toFixed(1)} h${s.next_due_at ? `; next due ${new Date(s.next_due_at).toLocaleString()}` : ""}` }));
@@ -459,6 +460,11 @@
     for (const t of r.turns) tt.appendChild(el("tr", { style: "cursor:pointer", onclick: () => setTurn(t.turn) }, [el("td", { class: "num", text: String(t.turn) }), el("td", { class: "num", text: `${yr(t.year_start)}–${yr(t.year_end)}` }), el("td", { class: "num", text: t.wall_s ? `${Math.round(t.wall_s / 60)} min` : "–" }), el("td", { class: "small muted", text: t.finished_at ? new Date(t.finished_at).toLocaleString() : "–" })]));
     pane.appendChild(tt);
     if (s.usage.calls) pane.appendChild(el("p", { class: "muted small", text: `usage so far: ${num(s.usage.input_tokens)} input tokens, ${num(s.usage.output_tokens)} output tokens, list-price estimate $${s.usage.cost_estimate_usd}` }));
+    if (s.usage.compute_assumptions) {
+      const ca = s.usage.compute_assumptions;
+      const sizes = Object.entries(ca.active_params || {}).map(([k, v]) => `${k} ${flop(v)}`).join(", ");
+      pane.appendChild(el("p", { class: "muted small", text: `Compute estimate: ${ca.flops_per_param_token} × assumed active parameters × tokens processed (uncached input + cache creation + output; cache reads excluded, so a lower bound). Assumed parameters per token: ${sizes}; fallback ${flop(ca.fallback_params)}. Anthropic publishes no parameter counts; these are placeholders set in the run's config.` }));
+    }
   }
 
   // ------------------------------------------------------------------ wiring
