@@ -87,6 +87,8 @@ select, .btn { font: inherit; color: var(--text-primary); background: var(--surf
 .selring { fill: none; stroke: var(--text-primary); pointer-events: none; }
 .horizon { fill-opacity: 0.06; pointer-events: none; }
 .track { fill: none; stroke: var(--axis); }
+.track.strike { stroke: var(--critical); }
+.track.message { stroke: var(--s1); }
 .probe { stroke: var(--surface-1); }
 .event { fill: none; stroke: var(--text-secondary); pointer-events: none; }
 .event.natural { stroke: var(--serious); }

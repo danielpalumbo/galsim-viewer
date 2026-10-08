@@ -283,7 +283,7 @@
     for (const t of td.transit) {
       const c = colorOf(t.owner);
       const [x1, y1, x2, y2] = [t.from_kpc[0], -t.from_kpc[1], t.to_kpc[0], -t.to_kpc[1]];
-      T.appendChild(entry(scaledTurn, svgEl("line", { class: "track", x1, y1, x2, y2 }), [Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2)], strokeW(1)));
+      T.appendChild(entry(scaledTurn, svgEl("line", { class: `track ${t.kind || "probe"}`, x1, y1, x2, y2 }), [Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2)], strokeW(1)));
       const px = x1 + (x2 - x1) * t.progress, py = y1 + (y2 - y1) * t.progress;
       const dot = svgEl("circle", { class: "probe", cx: px, cy: py, fill: c.css });
       dot.appendChild(svgEl("title")).textContent = `${t.id} · ${agentName(t.owner)} · ${sci(t.mass_kg)} kg at ${t.v}c → ${t.dest_cell}, arrives year ${yr(t.arr)}`;
@@ -365,6 +365,7 @@
     pane.appendChild(el("h2", {}, [sw, `${a.name} (${aid})`, el("span", { class: "muted small", text: ` seat ${a.seat_domain} in ${a.seat_cell || "?"}` })]));
     if (state.run.backend === "mock") pane.appendChild(el("p", { class: "small bad", text: "Mock run: this agent is a scripted policy with no model behind it, so its thoughts, worries and memory are one-line templates. Choose a real-model run in the run selector for natural-language reasoning." }));
     pane.appendChild(el("div", { class: "stats" }, [stat("power", `${sci(a.power_W)} W`), stat("compute", `${sci(a.compute)} ops/s`), stat("domains", String(a.n_domains)), stat("goal", a.goal_fraction.toFixed(3)), stat("seeds in flight", String(obs ? obs.in_transit : "–")), stat("knowledge horizon", `${yr(a.horizon_ly)} ly`)]));
+    if (a.sensing && a.sensing.sensor_area_m2 != null) pane.appendChild(el("div", { class: "stats" }, [stat("sensors", `${sci(a.sensing.sensor_area_m2)} m²`), stat("detection threshold", `${sci(a.sensing.detection_flux_W_m2)} W/m²`), stat("2026-level reach", `${yr(a.sensing.reach_2026_ly)} ly`), stat("galaxy surveyed", `${(100 * a.sensing.survey_coverage).toFixed(2)}%`)]));
     if (sub && sub.idle) pane.appendChild(el("p", { class: "bad", text: `Idle turn: ${sub.notes.join("; ")}` }));
     pane.appendChild(el("h3", { text: "Thinking about" })); pane.appendChild(quote(sub ? sub.thinking : ""));
     pane.appendChild(el("h3", { text: "Worried about" })); pane.appendChild(quote(sub ? sub.worried : ""));
