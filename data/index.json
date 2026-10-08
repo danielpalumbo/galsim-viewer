@@ -14,8 +14,11 @@
    "next_due_at": null,
    "paused": null,
    "halted": null,
-   "state": "finished",
-   "archived": null
+   "state": "archived",
+   "archived": {
+    "since": "2026-10-07",
+    "reason": "Complete: all ten agents met the goal (first at turn 11, year 3,000; last at turn 15, year 7,000) and the run ended by the termination rule after turn 21, year 21,000. Ten agents with Opus 5.5, Game Master Fable 5.1, 22 turns, about $341 list-equivalent."
+   }
   },
   {
    "run_id": "run02",
