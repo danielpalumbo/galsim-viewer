@@ -1,17 +1,17 @@
 {
- "generated_at": "2026-10-25T08:55:32+00:00",
+ "generated_at": "2026-10-25T09:48:49+00:00",
  "runs": [
   {
    "run_id": "run03",
    "label": "run03: the only spacefarer",
    "backend": "claude_code",
    "n_agents": 10,
-   "turns_done": 17,
+   "turns_done": 18,
    "n_turns": 60,
-   "last_year": 8000.0,
-   "generated_at": "2026-10-25T08:55:32+00:00",
+   "last_year": 9000.0,
+   "generated_at": "2026-10-25T09:48:49+00:00",
    "finished": false,
-   "next_due_at": "2026-10-25T17:55:02+00:00",
+   "next_due_at": "2026-10-25T18:51:15+00:00",
    "paused": null,
    "halted": null,
    "state": "running",
