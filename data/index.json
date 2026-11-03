@@ -11,10 +11,10 @@
    "last_year": 11000.0,
    "generated_at": "2026-10-26T10:36:04+00:00",
    "finished": false,
-   "next_due_at": "2026-10-26T19:24:40+00:00",
-   "paused": null,
+   "next_due_at": null,
+   "paused": "Run paused at turn 20 (2026-11-03T12:30:01+00:00)",
    "halted": null,
-   "state": "running",
+   "state": "paused",
    "archived": null
   },
   {
