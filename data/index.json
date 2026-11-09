@@ -11,10 +11,10 @@
    "last_year": 71000.0,
    "generated_at": "2026-11-09T09:56:47+00:00",
    "finished": false,
-   "next_due_at": "2026-11-09T18:55:03+00:00",
-   "paused": null,
+   "next_due_at": null,
+   "paused": "Run paused after turn 31 (year 71,000) on 2026-11-09: the host machine is being moved, so the daily 04:00 America/New_York cron is disabled until it is re-enabled",
    "halted": null,
-   "state": "running",
+   "state": "paused",
    "archived": null
   },
   {
